@@ -1,0 +1,68 @@
+---
+- name: Install and secure MySQL on Ubuntu
+  hosts: all
+  become: yes
+  vars:
+    mysql_root_password: #Atur Password MySQL
+
+  tasks:
+  
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install MySQL server
+      apt:
+        name: mysql-server
+        state: present
+
+    - name: Ensure MySQL is running
+      service:
+        name: mysql
+        state: started
+        enabled: true
+
+    - name: Install Python3-pip
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Install PyMySQL via apt
+      apt:
+        name: python3-pymysql
+        state: present
+
+    - name: Set root password and disallow remote root login
+      community.mysql.mysql_user:
+        name: root
+        host_all: true
+        password: "{{ mysql_root_password }}"
+        check_implicit_admin: true
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        priv: '*.*:ALL,GRANT'
+        state: present
+        host: localhost
+
+    - name: Remove test database
+      community.mysql.mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Remove anonymous MySQL users
+      community.mysql.mysql_user:
+        name: ''
+        host_all: true
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Reload privilege tables
+      community.mysql.mysql_query:
+        query: "FLUSH PRIVILEGES"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock

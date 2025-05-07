@@ -1,0 +1,126 @@
+---
+- name: Deploy Laravel App to Server with PHP 8.2 + Nginx
+  hosts: all
+  become: yes
+
+  vars:
+    app_name: tracktruck.ai
+    app_path: /var/www/{{ app_name }}
+    git_repo: 'https://github.com/andimuhriffal/tracktruck.ai.git'
+    php_version: "8.2"
+    nginx_config: files/nginx-laravel.conf
+    env_file: files/.env
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Add PHP {{ php_version }} repository (PPA)
+      apt_repository:
+        repo: ppa:ondrej/php
+        state: present
+        update_cache: yes
+
+    - name: Install dependencies including PHP {{ php_version }}
+      apt:
+        name:
+          - nginx
+          - php{{ php_version }}
+          - php{{ php_version }}-cli
+          - php{{ php_version }}-fpm
+          - php{{ php_version }}-mysql
+          - php{{ php_version }}-mbstring
+          - php{{ php_version }}-xml
+          - php{{ php_version }}-bcmath
+          - php{{ php_version }}-curl
+          - php{{ php_version }}-zip
+          - php{{ php_version }}-intl
+          - unzip
+          - git
+          - curl
+          - composer
+          - mysql-client
+        state: present
+
+    - name: Ensure PHP-FPM is running
+      service:
+        name: php{{ php_version }}-fpm
+        state: started
+        enabled: yes
+
+    - name: Clone Laravel project
+      git:
+        repo: "{{ git_repo }}"
+        dest: "{{ app_path }}"
+        version: main
+        force: yes
+
+    - name: Copy .env file
+      copy:
+        src: "{{ env_file }}"
+        dest: "{{ app_path }}/.env"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Install Laravel dependencies with Composer
+      shell: composer install --no-interaction --prefer-dist --optimize-autoloader
+      args:
+        chdir: "{{ app_path }}"
+      environment:
+        COMPOSER_ALLOW_SUPERUSER: 1
+      notify: Restart PHP-FPM
+
+    - name: Set correct permissions for Laravel
+      file:
+        path: "{{ item }}"
+        state: directory
+        recurse: yes
+        owner: www-data
+        group: www-data
+        mode: '0775'
+      loop:
+        - "{{ app_path }}/storage"
+        - "{{ app_path }}/bootstrap/cache"
+
+    - name: Run Laravel artisan commands
+      shell: "{{ item }}"
+      args:
+        chdir: "{{ app_path }}"
+      loop:
+        - php artisan config:clear
+        - php artisan cache:clear
+        - php artisan key:generate
+
+    - name: Configure Nginx for Laravel
+      copy:
+        src: "{{ nginx_config }}"
+        dest: /etc/nginx/sites-available/{{ app_name }}
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload nginx
+
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/{{ app_name }}
+        dest: /etc/nginx/sites-enabled/{{ app_name }}
+        state: link
+        force: yes
+
+    - name: Remove default Nginx site if exists
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+  handlers:
+    - name: Reload nginx
+      service:
+        name: nginx
+        state: reloaded
+
+    - name: Restart PHP-FPM
+      service:
+        name: php{{ php_version }}-fpm
+        state: restarted
