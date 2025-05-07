@@ -40,7 +40,4 @@ Panduan ini menjelaskan cara menjalankan skrip Ansible di lingkungan WSL Windows
 Silakan fork, gunakan, dan modifikasi sesuai kebutuhan Anda.
 
 ---
-
-## 📄 Lisensi
-
-Proyek ini menggunakan lisensi [MIT](LICENSE).
+---
