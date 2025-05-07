@@ -12,8 +12,8 @@ Panduan ini menjelaskan cara menjalankan skrip Ansible di lingkungan WSL Windows
 2. **Remote WSL Menggunakan VSCode**  
    Gunakan ekstensi "Remote - WSL" di Visual Studio Code untuk mengakses lingkungan WSL Anda.
 
-3. **Instal Plugin Ansible**  
-   Tambahkan ekstensi Ansible di VSCode untuk dukungan syntax highlighting dan kemudahan pengembangan.
+3. **Instal Ansible**  
+   Install Ansible Di Lingkungan Linux WSL.
 
 4. **Uji Coba Skrip**  
    Jalankan skrip untuk memastikan semuanya berjalan dengan baik.
@@ -37,7 +37,7 @@ Panduan ini menjelaskan cara menjalankan skrip Ansible di lingkungan WSL Windows
 ## 🙌 Penutup
 
 ✨ Semoga sukses! 😊👌  
-Silakan fork, gunakan, dan modifikasi sesuai kebutuhan Anda.
+Silakan gunakan, dan modifikasi sesuai kebutuhan Anda.
 
 ---
 ---
